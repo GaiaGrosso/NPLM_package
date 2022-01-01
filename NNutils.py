@@ -24,7 +24,7 @@ class WeightClip(Constraint):
         return {'name': self.__class__.__name__, 'c': self.c}
 
 
-class BSMfinder(Model):
+class BSMfinderNet(Model):
     def __init__(self,input_shape, architecture=[1, 4, 1], weight_clipping=None, activation='sigmoid', trainable=True, initializer=None, name=None, **kwargs):
         # default initializer
         kernel_initializer = "glorot_uniform"
@@ -54,11 +54,11 @@ class BSMfinder(Model):
         return x
 
 
-class NPLM_imperfect(Model):
+class imperfect_model(Model):
     def __init__(self, input_shape, NU_S, NUR_S, NU0_S, SIGMA_S, NU_N, NUR_N, NU0_N, SIGMA_N,
                  BSMarchitecture=[1, 10, 1], BSMweight_clipping=1., correction='', 
                  shape_dictionary_list=[None],
-                 train_nu=True, train_f=True, name='NPLM', **kwargs):
+                 train_nu=True, train_f=True, name='model', **kwargs):
         '''
         input_shape: (None, D)  #D is the number of input variables
         NU_S: set of shape nuisance parameters (fit to the data)
@@ -95,7 +95,7 @@ class NPLM_imperfect(Model):
                 delta_std        = shape_dict['shape_std']
                 delta_weights    = shape_dict['weights_file']
                 self.deltas_std.append(delta_std)
-                NN = ParametricNet(delta_input, delta_architectures, delta_wclips, delta_activation, degree=delta_poly_degree,
+                NN = TaylorExpansionNet(delta_input, delta_architectures, delta_wclips, delta_activation, degree=delta_poly_degree,
                                    init_null=[False for _ in range(delta_poly_degree)],
                                    initial_model=[False for _ in range(delta_poly_degree)],
                                    train=[False for _ in range(delta_poly_degree)], 
@@ -122,7 +122,7 @@ class NPLM_imperfect(Model):
             self.sig_n  = Variable(initial_value=SIGMA_N,      dtype="float32", trainable=False,     name='sigma_n')
 
         if train_f: 
-            self.BSMfinder = BSMfinder(input_shape, BSMarchitecture, BSMweight_clipping)
+            self.BSMfinder = BSMfinderNet(input_shape, BSMarchitecture, BSMweight_clipping)
         if not train_f and correction=='':
             logging.error("All modules are null. Please whether set train_f==True or correction != ''.")
             exit()
@@ -178,7 +178,7 @@ class NPLM_imperfect(Model):
         return output
 
 
-class ParametricNet(Model):
+class TaylorExpansionNet(Model):
     '''
     architectures: list of lists [a1, a2, ..., an], ai = [layer1, layer2, ..] n=degree
     weight_clippings: list of values; each weight clipping is associated to a model length(weight_clipping)=degree
@@ -211,7 +211,7 @@ class ParametricNet(Model):
             return output
 
 
-def NPLM_Imperfect_Loss(true, pred):
+def imperfect_loss(true, pred):
     f   = pred[:, 0]
     Laux= pred[:, 1]
     y   = true[:, 0]
