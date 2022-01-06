@@ -80,8 +80,8 @@ ID+='_arc'+str(config_json["BSMarchitecture"]).replace(', ', '_').replace('[', '
 if __name__ == '__main__':
     parser   = argparse.ArgumentParser()
     parser.add_argument('-p','--pyscript', type=str, help="name of python script to execute", required=True)
-    parser.add_argument('-l','--local',    type=int, help='if to be run locally', required=False, default=0)
-    parser.add_argument('-t', '--toys',    type=str, default = "100", help="number of toys to be processed")
+    parser.add_argument('-l','--local',    type=int, help='if to be run locally',             required=False, default=0)
+    parser.add_argument('-t', '--toys',    type=int, help="number of toys to be processed",   required=False, default = 100)
     args     = parser.parse_args()
     ntoys    = args.toys
     pyscript = args.pyscript
@@ -95,12 +95,13 @@ if __name__ == '__main__':
     
     json_path = create_config_file(config_json, config_json["output_directory"])
     if args.local:
-        print('!!! Be sure you source /cvmfs/sft.cern.ch/lcg/views/LCG_99/x86_64-centos7-gcc8-opt/setup.sh before !!!')
+        print('!!! Be sure you sourced /cvmfs/sft.cern.ch/lcg/views/LCG_99/x86_64-centos7-gcc8-opt/setup.sh !!!')
+        print('!!! or activate your personal environment before                                             !!!')
         os.system("python %s/%s -j %s" %(os.getcwd(), pyscript, json_path))
     else:
         label = "folder-log-jobs"
         os.system("mkdir %s" %label)
-        for i in range(int(ntoys)):        
+        for i in range(ntoys):        
             # src file
             script_src = open("%s/%i.src" %(label, i) , 'w')
             script_src.write("#!/bin/bash\n")
