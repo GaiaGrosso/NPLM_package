@@ -6,13 +6,15 @@ A fully detailed description of this use case can be found in *Learning New Phys
 ## Content of this folder
 - `1D_tutorial.ipynb`: shows interactively how to run a single experiment
 - `toy.py`: script to run a single experiment ans save outputs.
+  Arguments:
+  - `jsonfile` (`-j`): path to the json configuration file (`string`, required).
 - `run_toy.py`: script to configure the experiment and execute it.\
   Usage example
   ```
   python run_toy.pt -p toy.py
   ```
   Arguments:
-  - `pyscript` (`-p`): name of the python script to be executed.
+  - `pyscript` (`-p`): name of the python script to be executed (`string`, required).
  
   The script creates an output folder where to store the experiment result and a json configuration file `config.json` of the following form:
   ```
