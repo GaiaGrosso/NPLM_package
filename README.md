@@ -8,3 +8,28 @@ NPLM is a strategy to detect data departures from a given reference model, with 
 - "Learning New Physics from a Machine" ([Phys. Rev. D](https://doi.org/10.1103/PhysRevD.99.015014))
 - "Learning Multivariate New Physics" ([Eur. Phys. J. C](https://doi.org/10.1140/epjc/s10052-021-08853-y))
 - "Learning New Physics from an Imperfect Machine" ([arXiv](https://arxiv.org/abs/2111.13633))
+
+## Envirnoment set up:
+Create a virtual environment with the packages specified in `requirements.txt`
+  ```
+  python3 -m venv env
+  source env/bin/activate
+  ```
+  to be sure that pip is up to date
+  ```
+  pip install --upgrade pip
+  ```
+  install the packaes listed in `requirements.txt`
+  ```
+  pip install -r requirements.txt 
+  ```
+  to see what you installed (check if successful)
+  ```
+  pip freeze
+  ```
+  Now you are ready to download the [NPLM](https://test.pypi.org/project/NPLM/) package:
+  ```
+  pip install -i https://test.pypi.org/simple/ NPLM
+  ```
+## Example: 1D toy model
+To understand how NPLM works see the 1D example in `example_1D`
