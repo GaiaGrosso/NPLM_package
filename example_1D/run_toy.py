@@ -59,7 +59,7 @@ if config_json["correction"]=='SHAPE' and not len(config_json["shape_dictionary_
     print('Error: correction is SHAPE but not specified "shape_dictionary_list" in the configuration dictionary.')
     exit()
 
-# add details about nuisance parameters to the folder name
+# add details about the experiment set up to the folder name
 correction_details = config_json["correction"]
 if config_json["correction"]=='SHAPE':
     correction_details += str(len(config_json["shape_dictionary_list"]))+'_'

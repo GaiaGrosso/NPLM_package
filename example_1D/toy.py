@@ -121,7 +121,7 @@ tau_OBS    = -2*final_loss
 print('tau_OBS: %f'%(tau_OBS))
 
 # save t                                                                                                               
-log_t = OUTPUT_PATH+OUTPUT_FILE_ID+'_tau.txt'
+log_t = OUTPUT_PATH+OUTPUT_FILE_ID+'_TAU.txt'
 out   = open(log_t,'w')
 out.write("%f\n" %(tau_OBS))
 out.close()
@@ -168,7 +168,7 @@ delta_OBS    = -2*final_loss
 print('delta_OBS: %f'%(delta_OBS))
 
 # save t                  
-log_t = OUTPUT_PATH+OUTPUT_FILE_ID+'_delta.txt'
+log_t = OUTPUT_PATH+OUTPUT_FILE_ID+'_DELTA.txt'
 out   = open(log_t,'w')
 out.write("%f\n" %(delta_OBS))
 out.close()

@@ -1,0 +1,51 @@
+{
+    "N_Ref": 200000,
+    "N_Bkg": 2000,
+    "N_Sig": 10,
+    "output_directory": ".//toy/1D/SHAPE1_nuN0_Nbkg2000_Nsig10_epochsTau300000_epochsDelta200000_arc1_4_1_wclip9",
+    "shape_nuisances_id": [
+        "scale"
+    ],
+    "shape_nuisances_data": [
+        0
+    ],
+    "shape_nuisances_reference": [
+        0
+    ],
+    "shape_nuisances_sigma": [
+        0.05
+    ],
+    "shape_dictionary_list": [
+        {
+            "poly_degree": 1,
+            "architectures": [
+                [
+                    1,
+                    4,
+                    1
+                ]
+            ],
+            "wclips": [
+                null
+            ],
+            "activation": "relu",
+            "shape_std": 0.07905694150420949,
+            "weights_file": "./LINEAR_Parametric_EXPO1D_batches_ref40000_bkg40000_sigmaS0.1_-1.0_-0.5_0.5_1.0_patience300_epochs30000_layers1_4_1_actrelu_model_weights9300.h5"
+        }
+    ],
+    "norm_nuisances_data": 0,
+    "norm_nuisances_reference": 0,
+    "norm_nuisances_sigma": 0.05,
+    "epochs_tau": 300000,
+    "patience_tau": 10000,
+    "epochs_delta": 200000,
+    "patience_delta": 100,
+    "BSMarchitecture": [
+        1,
+        4,
+        1
+    ],
+    "BSMweight_clipping": 9,
+    "correction": "SHAPE",
+    "pyscript": "toy.py"
+}
