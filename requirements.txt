@@ -1,4 +1,4 @@
-tensorflow==2.4.3
+tensorflow>=2.5.1
 numpy>=1.21
 matplotlib==3.3.3
 h5py
