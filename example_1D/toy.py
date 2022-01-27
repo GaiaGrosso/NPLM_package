@@ -38,20 +38,21 @@ N_D        = N_Bkg
 
 #### nuisance parameters configuration   
 correction= config_json["correction"]
-NU_S      = config_json["shape_nuisances_data"]
-NU_N      = config_json["norm_nuisances_data"]
-
-SIGMA_S   = config_json["shape_nuisances_sigma"]
-SIGMA_N   = config_json["norm_nuisances_sigma"]
-
-NUR_S     = config_json["shape_nuisances_reference"]
-NUR_N     = config_json["norm_nuisances_reference"]
-
-NU0_S     = np.array([np.random.normal(loc=NU_S[i], scale=SIGMA_S[i], size=1)[0] for i in range(len(SIGMA_S))])
-NU0_N     = np.random.normal(loc=NU_N, scale=SIGMA_N, size=1)[0]
-
+NU_S, NUR_S, NU0_S, SIGMA_S = [], [], [], []
+NU_N, NUR_N, NU0_N, SIGMA_N = 0, 0, 0, 0
 shape_dictionary_list = []
+
+if not correction=='':
+    NU_N      = config_json["norm_nuisances_data"] 
+    SIGMA_N   = config_json["norm_nuisances_sigma"]
+    NUR_N     = config_json["norm_nuisances_reference"]
+    NU0_N     = np.random.normal(loc=NU_N, scale=SIGMA_N, size=1)[0]
+
 if correction=='SHAPE':
+    NU_S      = config_json["shape_nuisances_data"]
+    SIGMA_S   = config_json["shape_nuisances_sigma"]
+    NUR_S     = config_json["shape_nuisances_reference"]
+    NU0_S     = np.array([np.random.normal(loc=NU_S[i], scale=SIGMA_S[i], size=1)[0] for i in range(len(SIGMA_S))])
     shape_dictionary_list=config_json["shape_dictionary_list"]
 
 #### training time                
