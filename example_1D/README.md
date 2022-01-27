@@ -42,7 +42,7 @@ A fully detailed description of this use case can be found in *Learning New Phys
     "correction": "SHAPE", # "SHAPE", "NORM", ""                                                                                                               
     }
   ```
-  `config.json` is saved in the output folder.
+  `config.json` is saved in the output folder. A detailed description of each entry of the dictionary is given [below](#more-about-the-experiment-set-up).
   
 - `run_toys.py` allows to submit several experiments on the CERN `lxplus` cluster via `HTCondor`.\
   Usage example:
@@ -54,3 +54,25 @@ A fully detailed description of this use case can be found in *Learning New Phys
   - `toys` (`-t`): number of experiments to be submitted (`int`, default 100).
   - `local` (`-l`): option that allow to execute locally one experiment (`int`, default 0).
 - `analysis_outputs.ipynb`: shows how to collect the output of several experiments from an output folder and produce summary files out of them. Furthermore it displays the main plots that one can exploit to perform the analysis.
+
+## More about the experiment set up
+Description of the parameters defined in the configuration file `config.json`:
+  - `N_Ref`: number of training events for the reference sample (label=0);
+  - `N_Bkg`: number of average training events for the data sample (label=1); the actual number of events will be drawn from a Poissonian distribution with expectation `N_Bkg`.
+  - `N_Sig`: number of average signal events to include in the data sample; the actual number of injected signal events will be drawn from a Poissonian distribution with expectation `N_Sig`; set to 0 if it's a background-only toy experiment;                                                                                                                                         
+  - `output_directory`: path to the folder where the experiment output will be saved;
+  - `shape_nuisances_id`: list of labels (strings) identifying each shape effect to be included in the treatment of systematic uncertainties (example: ['scale']);
+  - `shape_nuisances_data`: list of the true values of the shape nuisance parameters to be used in units of sigmas; to generate tha data sample (example: [1]);                                                                                                                     
+  - `shape_nuisances_reference`: list of the values of the shape nuisance parameters that describes the reference sample in units of sigma (generally the nuisance parameters are parametrized so that they are all null values; example: [0]);
+  - `shape_nuisances_sigma`: list of the values of the uncertainties associated to each shape nuisance parameter (example: [0.05]);
+  - `shape_dictionary_list`: list of dictionaries containing the information regarding the parametric models associated to each shape effect; the keys list must match the `shape_nuisances_id` list (example: [parNN_list['scale']]);
+  - `norm_nuisances_data`:  true value of the global normalization nuisance parameter in units of sigmas; to be used to generate the data sample (example: 0);
+  - `norm_nuisances_reference`:  value of the global normalization uncertainty that describes the reference sample in units of sigmas (generally the nuisance parameters are parametrized so that they are all null values; example: 0);
+  - `norm_nuisances_sigma`:  value of the uncertainty associated to the normalization nuisance parameter (example: 0.05);
+  - `epochs_tau`: number of training epochs for the TAU term;
+  - `patience_tau`: rate at which the training hisotry is saved for the TAU term;
+  - `epochs_delta`: number of training epochs for the DELTA term;
+  - `patience_delta`: ate at which the training hisotry is saved for the DELTA term;
+  - `BSMarchitecture`: list of dimensions (int) characterizing the DNN architecture in the TAU term; the first number is the input dimension, the following are the number of neurons that constitute each layer, the last one is the dimension of the output layer which must be always 1 (example: [1,4,1]);
+  - `BSMweight_clipping`: vlaue of the weight clipping parameter applied to each weight of the DNN in the TAU term (float);
+  - `correction`: label that can take one of the following values: `"SHAPE"`, `"NORM"`, `""`; it states the training mode: if `SHAPE` both normalization and shape uncertainties are considered; if `NORM` only normalization uncertainties are considered; if `""` all systematic uncertainties are neglected and the algorithm runs a simplified version of NPLM (DELTA term is not computed and the TAU term does not contain the nuisance parameters).
