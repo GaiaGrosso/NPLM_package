@@ -43,15 +43,15 @@ NU_N, NUR_N, NU0_N, SIGMA_N = 0, 0, 0, 0
 shape_dictionary_list = []
 
 if not correction=='':
-    NU_N      = config_json["norm_nuisances_data"] 
     SIGMA_N   = config_json["norm_nuisances_sigma"]
-    NUR_N     = config_json["norm_nuisances_reference"]
+    NU_N      = config_json["norm_nuisances_data"]*SIGMA_N
+    NUR_N     = config_json["norm_nuisances_reference"]*SIGMA_N
     NU0_N     = np.random.normal(loc=NU_N, scale=SIGMA_N, size=1)[0]
 
 if correction=='SHAPE':
-    NU_S      = config_json["shape_nuisances_data"]
     SIGMA_S   = config_json["shape_nuisances_sigma"]
-    NUR_S     = config_json["shape_nuisances_reference"]
+    NU_S      = [config_json["shape_nuisances_data"][i]*SIGMA_S[i] for i in range(len(SIGMA_S))]
+    NUR_S     = [config_json["shape_nuisances_reference"][i]*SIGMA_S[i] for i in range(len(SIGMA_S))]
     NU0_S     = np.array([np.random.normal(loc=NU_S[i], scale=SIGMA_S[i], size=1)[0] for i in range(len(SIGMA_S))])
     shape_dictionary_list=config_json["shape_dictionary_list"]
 
