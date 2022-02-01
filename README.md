@@ -27,9 +27,9 @@ Create a virtual environment with the packages specified in `requirements.txt`
   ```
   pip freeze
   ```
-  Now you are ready to download the [NPLM](https://test.pypi.org/project/NPLM/) package:
+  Now you are ready to download the [NPLM](https://pypi.org/project/NPLM/) package:
   ```
-  pip install -i https://test.pypi.org/simple/ NPLM
+  pip install NPLM
   ```
 ## Example: 1D toy model
 To understand how NPLM works see the 1D example in `example_1D`
