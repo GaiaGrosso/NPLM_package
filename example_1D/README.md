@@ -60,7 +60,7 @@ Description of the parameters defined in the configuration file `config.json`:
   - `N_Ref`: number of training events for the reference sample (label=0);
   - `N_Bkg`: number of average training events for the data sample (label=1); the actual number of events will be drawn from a Poissonian distribution with expectation `N_Bkg`.
   - `N_Sig`: number of average signal events to include in the data sample; the actual number of injected signal events will be drawn from a Poissonian distribution with expectation `N_Sig`; set to 0 if it's a background-only toy experiment;                                                                                                                                         
-  - `output_directory`: path to the folder where the experiment output will be saved;
+  - `output_directory`: path to the folder where the experiment output will be saved (absolute path);
   - `shape_nuisances_id`: list of labels (strings) identifying each shape effect to be included in the treatment of systematic uncertainties (example: ['scale']);
   - `shape_nuisances_data`: list of the true values of the shape nuisance parameters to be used in units of sigmas; to generate tha data sample (example: [1]);                                                                                                                     
   - `shape_nuisances_reference`: list of the values of the shape nuisance parameters that describes the reference sample in units of sigma (generally the nuisance parameters are parametrized so that they are all null values; example: [0]);
