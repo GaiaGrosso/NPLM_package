@@ -31,5 +31,14 @@ Create a virtual environment with the packages specified in `requirements.txt`
   ```
   pip install NPLM
   ```
+## Envirnoment set up: on lxplus at Cern
+  Just source the virtual environment: 
+  ```
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_99/x86_64-centos7-gcc10-opt/setup.sh
+  ```
+  Download the [NPLM](https://pypi.org/project/NPLM/) package:
+  ```
+  pip install NPLM
+  ```
 ## Example: 1D toy model
 To understand how NPLM works see the 1D example in `example_1D`
