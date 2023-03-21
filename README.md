@@ -40,5 +40,8 @@ Create a virtual environment with the packages specified in `requirements.txt`
   ```
   pip install NPLM
   ```
+## Main features in the package:
+- `imperfect_model`
+![alt text](https://github.com/GaiaGrosso/NPLM_package/blob/v0.0.6/scheme.png?raw=true)
 ## Example: 1D toy model
 To understand how NPLM works see the 1D example in `example_1D`
