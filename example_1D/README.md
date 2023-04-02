@@ -6,7 +6,8 @@ The NPLM algorithm tests the data sample for the presence of a signal which is n
 
 A fully detailed description of this use case can be found in *Learning New Physics from an Imperfect Machine* ([arXiv](https://arxiv.org/abs/2111.13633)).
 ## Content of this folder
-- `1D_tutorial.ipynb`: shows interactively how to run a single experiment.
+- `1D_tutorial.ipynb`: shows interactively how to run a single experiment.\
+- `1D_tutorial_regularization.ipynb`: run a single experiment in absence of systematic uncertainties; different regularization methods can be set up.\
 - `toy.py`: script to run a single experiment and save outputs.\
   Arguments:
   - `jsonfile` (`-j`): path to the json configuration file (`string`, required).
