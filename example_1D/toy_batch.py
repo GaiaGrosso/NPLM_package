@@ -1,0 +1,210 @@
+import sys, os, time, datetime, h5py, json, argparse
+import numpy as np
+from scipy.stats import norm, expon, chi2, uniform, chisquare
+
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+
+import tensorflow as tf
+from tensorflow import keras
+
+from NPLM.NNutils import *
+from NPLM.PLOTutils import *
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-j', '--jsonfile'  , type=str, help="json file", required=True)
+parser.add_argument('-s', '--seed', type=int, help="toy seed", required=True)
+parser.add_argument('-r', '--run', type=int, help="batch run", required=True)
+args = parser.parse_args()
+
+#### set up parameters ###############################
+with open(args.jsonfile, 'r') as jsonfile:
+    config_json = json.load(jsonfile)
+
+run  = args.run
+seed = args.seed
+print('Random seed: ', seed, ', run: ', run)
+#### statistics
+N_ref      = config_json["N_Ref"]
+N_Bkg      = config_json["N_Bkg"]
+N_Sig      = config_json["N_Sig"]
+N_R        = N_ref
+N_D        = N_Bkg
+
+#### nuisance parameters configuration
+correction= config_json["correction"]
+NU_S, NUR_S, NU0_S, SIGMA_S = [], [], [], []
+NU_N, NUR_N, NU0_N, SIGMA_N = 0, 0, 0, 0
+shape_dictionary_list = []
+
+np.random.seed(seed) # this seed defines the aux values, has to be the same for all runs 
+if not correction=='':
+    SIGMA_N   = config_json["norm_nuisances_sigma"]
+    NU_N      = config_json["norm_nuisances_data"]*SIGMA_N
+    NUR_N     = config_json["norm_nuisances_reference"]*SIGMA_N
+    NU0_N     = np.random.normal(loc=NU_N, scale=SIGMA_N, size=1)[0]
+
+if correction=='SHAPE':
+    SIGMA_S   = config_json["shape_nuisances_sigma"]
+    NU_S      = [config_json["shape_nuisances_data"][i]*SIGMA_S[i] for i in range(len(SIGMA_S))]
+    NUR_S     = [config_json["shape_nuisances_reference"][i]*SIGMA_S[i] for i in range(len(SIGMA_S))]
+    NU0_S     = np.array([np.random.normal(loc=NU_S[i], scale=SIGMA_S[i], size=1)[0] for i in range(len(SIGMA_S))])
+    shape_dictionary_list=config_json["shape_dictionary_list"]
+
+#### training time
+total_epochs_tau   = config_json["epochs_tau"]
+patience_tau       = config_json["patience_tau"]
+total_epochs_delta = config_json["epochs_delta"]
+patience_delta     = config_json["patience_delta"]
+
+#### architecture                                                                                                                                                                  
+BSMweight_clipping = config_json["BSMweight_clipping"]
+BSMarchitecture    = config_json["BSMarchitecture"]
+inputsize          = BSMarchitecture[0]
+BSMdf              = compute_df(input_size=BSMarchitecture[0], hidden_layers=BSMarchitecture[1:-1])
+
+##### define output path ######################                                                                                                                                    
+OUTPUT_PATH     = config_json["output_directory"]
+OUTPUT_FILE_ID  = '/seed%i/'%(seed)
+if not os.path.exists(OUTPUT_PATH+OUTPUT_FILE_ID):
+    os.makedirs(OUTPUT_PATH+OUTPUT_FILE_ID)
+OUTPUT_FILE_ID += 'run%i'%(run)
+
+#### build training samples ###################                                                                                               
+Norm = NU_N
+Scale= NU_S[0]
+# ref                                                                                                                                         
+np.random.seed(seed) # this seed defines the reference, has to be the same for all runs                                                       
+featureRef  = np.random.exponential(scale=1., size=(N_ref, 1))
+# data                                                                                                                                        
+np.random.seed(seed+run) # this seed defines the pois and the data sampling, has to be differente for all runs                                
+N_Bkg_Pois  = np.random.poisson(lam=N_Bkg*np.exp(Norm), size=1)[0]
+if N_Sig:
+    N_Sig_Pois = np.random.poisson(lam=N_Sig*np.exp(Norm), size=1)[0]
+
+featureData = np.random.exponential(scale=np.exp(1*Scale), size=(N_Bkg_Pois, 1))
+if N_Sig:
+    featureSig  = np.random.normal(loc=6.4, scale=0.16, size=(N_Sig_Pois,1))*np.exp(Scale)
+    featureData = np.concatenate((featureData, featureSig), axis=0)
+
+feature     = np.concatenate((featureData, featureRef), axis=0)
+
+# target
+targetData  = np.ones_like(featureData)
+targetRef   = np.zeros_like(featureRef)
+weightsData = np.ones_like(featureData)
+weightsRef  = np.ones_like(featureRef)*N_D*1./N_R
+target      = np.concatenate((targetData, targetRef), axis=0)
+weights     = np.concatenate((weightsData, weightsRef), axis=0)
+target      = np.concatenate((target, weights), axis=1)
+
+batch_size  = feature.shape[0]
+inputsize   = feature.shape[1]
+
+#### training TAU ###############################                                                                                                                                  
+tau = imperfect_model(input_shape=(None, inputsize),
+                      NU_S=NU_S, NUR_S=NUR_S, NU0_S=NU0_S, SIGMA_S=SIGMA_S,
+                      NU_N=NU_N, NUR_N=NUR_N, NU0_N=NU0_N, SIGMA_N=SIGMA_N,
+                      correction=correction, shape_dictionary_list=shape_dictionary_list,
+                      BSMarchitecture=BSMarchitecture, BSMweight_clipping=BSMweight_clipping, train_f=True, train_nu=True)
+print(tau.summary())
+optimizer_tau = tf.keras.optimizers.legacy.Adam()
+t0=time.time()
+#hist_tau = tau.fit(feature, target, batch_size=batch_size, epochs=total_epochs_tau, verbose=False)                                                                                
+hist_tau = train_model(model=tau,
+                       feature=feature,
+                       target=target,
+                       loss=imperfect_loss,
+                       optimizer=optimizer_tau,
+                       total_epochs=total_epochs_tau,
+                       patience=patience_tau,
+                       clipping=True,
+                       verbose=False)
+
+t1=time.time()
+print('Training time (seconds):')
+print(t1-t0)
+
+# metrics                                                                                                                                     
+loss_tau  = np.array(hist_tau['loss'])
+
+# test statistic                                                                                                                              
+final_loss = loss_tau[-1]
+tau_OBS    = -2*final_loss
+print('tau_OBS: %f'%(tau_OBS))
+
+# save t                                                                                                                                      
+log_t = OUTPUT_PATH+OUTPUT_FILE_ID+'_TAU.txt'
+out   = open(log_t,'w')
+out.write("%f\n" %(tau_OBS))
+out.close()
+
+# save the training history                                                                                                                   
+log_history = OUTPUT_PATH+OUTPUT_FILE_ID+'_TAU_history.h5'
+f           = h5py.File(log_history,"w")
+for key in list(hist_tau.keys()):
+    monitored = np.array(hist_tau[key])
+    print('%s: %f'%(key, monitored[-1]))
+    f.create_dataset(key, data=monitored,   compression='gzip')
+f.close()
+
+# save the model                                                                                                                              
+log_weights = OUTPUT_PATH+OUTPUT_FILE_ID+'_TAU_weights.h5'
+tau.save_weights(log_weights)
+
+# save the model                                                                                                                              
+log_weights = OUTPUT_PATH+OUTPUT_FILE_ID+'_TAU_weights.h5'
+tau.save_weights(log_weights)
+
+#### training delta ###########################                                                                                               
+delta = imperfect_model(input_shape=(None, inputsize),
+                      NU_S=NU_S, NUR_S=NUR_S, NU0_S=NU0_S, SIGMA_S=SIGMA_S,
+                      NU_N=NU_N, NUR_N=NUR_N, NU0_N=NU0_N, SIGMA_N=SIGMA_N,
+                      correction=correction, shape_dictionary_list=shape_dictionary_list,
+                      BSMarchitecture=BSMarchitecture, BSMweight_clipping=BSMweight_clipping, train_f=False, train_nu=True)
+
+print(delta.summary())
+optimizer_delta  = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=0.0000001)
+
+t0=time.time()
+#hist_delta = delta.fit(feature, target, batch_size=batch_size, epochs=total_epochs_delta, verbose=False)                                     
+hist_delta = train_model(model=delta,
+                         feature=feature,
+                         target=target,
+                         loss=imperfect_loss,
+                         optimizer=optimizer_delta,
+                         total_epochs=total_epochs_delta,
+                         patience=patience_delta,
+                         clipping=False,
+                         verbose=False)
+t1=time.time()
+print('Training time (seconds):')
+print(t1-t0)
+
+# metrics                                                                                                                                     
+loss_delta  = np.array(hist_delta['loss'])
+
+# test statistic                                                                                                                              
+final_loss   = loss_delta[-1]
+delta_OBS    = -2*final_loss
+print('delta_OBS: %f'%(delta_OBS))
+
+# save t                                                                                                                                      
+log_t = OUTPUT_PATH+OUTPUT_FILE_ID+'_DELTA.txt'
+out   = open(log_t,'w')
+out.write("%f\n" %(delta_OBS))
+out.close()
+
+# save the training history                                                                                                                   
+log_history = OUTPUT_PATH+OUTPUT_FILE_ID+'_DELTA_history.h5'
+f           = h5py.File(log_history,"w")
+for key in list(hist_delta.keys()):
+    monitored =np.array(hist_delta[key])
+    print('%s: %f'%(key, monitored[-1]))
+    f.create_dataset(key, data=monitored,   compression='gzip')
+f.close()
+
+# save the model                                                                                                                              
+log_weights = OUTPUT_PATH+OUTPUT_FILE_ID+'_DELTA_weights.h5'
+delta.save_weights(log_weights)
