@@ -16,12 +16,15 @@ class WeightClip(Constraint):
     '''
     def __init__(self, c=2):
         self.c = c
+        
     def __call__(self, p):
         return tf.clip_by_value(p, clip_value_min=-self.c, clip_value_max=self.c)
+    
     def get_config(self):
         return {'name': self.__class__.__name__, 'c': self.c}
 
-
+ 
+    
 class BSMfinderNet(Model):
     def __init__(self,input_shape, architecture=[1, 4, 1], weight_clipping=None, activation='sigmoid', trainable=True, initializer=None, name=None, **kwargs):
         # default initializer
@@ -31,18 +34,18 @@ class BSMfinderNet(Model):
             kernel_initializer = initializer
             bias_initializer = initializer
         super().__init__(name=name, **kwargs)
-        if weight_clipping ==None:
-            self.hidden_layers = [Dense(architecture[i+1], input_shape=(architecture[i],), activation=activation, trainable=trainable,
-                                        kernel_initializer=initializer, bias_initializer=initializer) for i in range(len(architecture)-2)]
-            self.output_layer  = Dense(architecture[-1], input_shape=(architecture[-2],), activation='linear', trainable=trainable,
-                                       kernel_initializer=initializer, bias_initializer=initializer)
-        else:
-            self.hidden_layers = [Dense(architecture[i+1], input_shape=(architecture[i],), activation=activation, trainable=trainable,
-                                        kernel_constraint = WeightClip(weight_clipping), 
-                                        kernel_initializer=initializer, bias_initializer=initializer) for i in range(len(architecture)-2)]
-            self.output_layer  = Dense(architecture[-1], input_shape=(architecture[-2],), activation='linear', trainable=trainable,
-                                       kernel_constraint = WeightClip(weight_clipping), 
-                                       kernel_initializer=initializer, bias_initializer=initializer)
+        
+        self.hidden_layers = [Dense(architecture[i+1], input_shape=(architecture[i],),
+                                    activation=activation, trainable=trainable,
+                                    kernel_initializer=initializer,
+                                    bias_initializer=initializer) for i in range(len(architecture)-2)]
+        
+        self.output_layer  = Dense(architecture[-1], input_shape=(architecture[-2],),
+                                   activation='linear', trainable=trainable,
+                                   kernel_initializer=initializer,
+                                   bias_initializer=initializer)
+        self.clipper = WeightClip(weight_clipping)
+        self.weight_clipping = weight_clipping
         self.build(input_shape)
 
     def call(self, x):
@@ -50,6 +53,13 @@ class BSMfinderNet(Model):
             x = hidden_layer(x)
         x = self.output_layer(x)
         return x
+
+    def clipping(self):
+        if self.weight_clipping==None: return
+        for layer in self.hidden_layers:
+            layer.set_weights([self.clipper(w) for w in layer.get_weights()])
+        self.output_layer.set_weights([self.clipper(w) for w in self.output_layer.get_weights()])
+        return
 
 
 class imperfect_model(Model):
@@ -118,7 +128,9 @@ class imperfect_model(Model):
             self.nuR_n  = Variable(initial_value=NUR_N,        dtype="float32", trainable=False,     name='nuR_n')
             self.nu0_n  = Variable(initial_value=NU0_N,        dtype="float32", trainable=False,     name='nu0_n')
             self.sig_n  = Variable(initial_value=SIGMA_N,      dtype="float32", trainable=False,     name='sigma_n')
-
+            
+        self.train_f=train_f
+        
         if train_f: 
             self.BSMfinder = BSMfinderNet(input_shape, BSMarchitecture, BSMweight_clipping)
         if not train_f and correction=='':
@@ -159,21 +171,17 @@ class imperfect_model(Model):
         if self.train_f:
             BSM = self.BSMfinder(x)
         output  = tf.keras.layers.Concatenate(axis=1)([BSM+Lratio, Laux])
-
-        #monitoring
-        if not self.correction=='':
-            self.add_metric(tf.reduce_mean(Laux),  aggregation='mean', name='Laux')
-            self.add_metric(tf.reduce_sum(Lratio), aggregation='sum',  name='Lratio')
-        if self.train_f:
-            self.add_metric(tf.reduce_sum(BSM),    aggregation='sum',  name='BSM')
-        if self.correction == 'SHAPE':
-            for i in range(self.nu_s.shape[0]):
-                self.add_metric(self.nu_s[i], aggregation='mean', name='shape_%i'%(i))
-            self.add_metric(self.nu_n, aggregation='mean', name='norm_0')
-        if self.correction == 'NORM':
-            self.add_metric(self.nu_n, aggregation='mean', name='norm_0')
-
         return output
+
+    def get_norm(self):
+        return tf.cast(self.nu_n, dtype=tf.float32)
+
+    def get_shape(self):
+        return tf.cast(self.nu_s, dtype=tf.float32)
+
+    def clipping(self):
+        if self.train_f: 
+            self.BSMfinder.clipping()
 
 
 class TaylorExpansionNet(Model):
@@ -215,3 +223,31 @@ def imperfect_loss(true, pred):
     y   = true[:, 0]
     w   = true[:, 1]
     return tf.reduce_sum((1-y)*w*(tf.exp(f)-1) - y*w*(f)) - tf.reduce_mean(Laux)
+
+def train_model(model, feature, target, loss, optimizer, total_epochs, patience, clipping=True, verbose=False):
+    pred = model(feature)
+    hist = {}
+    hist['epoch'] = np.array([0])
+    hist['loss']  = np.array([loss(target, pred).numpy()])
+    hist['laux']  = np.array([np.mean(pred[:, 1].numpy())])
+    hist['norm']  = model.get_norm().numpy().reshape(1, -1)
+    hist['shape'] = model.get_shape().numpy().reshape(1, -1)
+    trainable_variables = model.trainable_variables
+
+    for epoch in range(total_epochs):
+        with tf.GradientTape() as tape:
+            pred = model(feature)
+            loss_value = loss(target, pred)
+        grads = tape.gradient(loss_value, trainable_variables)
+        optimizer.apply_gradients(zip(grads,trainable_variables))
+        if clipping:
+            model.clipping()
+        if not (epoch%patience):
+            hist['epoch'] = np.append(hist['epoch'], epoch+1)
+            hist['loss']  = np.append(hist['loss'], loss_value.numpy())
+            hist['laux']  = np.append(hist['laux'], np.mean(pred[:, 1].numpy()) )
+            hist['norm']  = np.concatenate((hist['norm'], model.get_norm().numpy().reshape(1, -1)), axis=0)
+            hist['shape'] = np.concatenate((hist['shape'], model.get_shape().numpy().reshape(1, -1)), axis=0)
+            if verbose:
+                print('Epoch: %i, Loss: %f'%(epoch, loss_value))
+    return hist

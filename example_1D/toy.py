@@ -105,43 +105,49 @@ tau = imperfect_model(input_shape=(None, inputsize),
                       correction=correction, shape_dictionary_list=shape_dictionary_list,
                       BSMarchitecture=BSMarchitecture, BSMweight_clipping=BSMweight_clipping, train_f=True, train_nu=True)
 print(tau.summary())
-tau.compile(loss=imperfect_loss,  optimizer='adam')
-
+optimizer_tau = tf.keras.optimizers.legacy.Adam()
 t0=time.time()
-hist_tau = tau.fit(feature, target, batch_size=batch_size, epochs=total_epochs_tau, verbose=False)
+#hist_tau = tau.fit(feature, target, batch_size=batch_size, epochs=total_epochs_tau, verbose=False)                                                                                
+hist_tau = train_model(model=tau,
+                       feature=feature,
+                       target=target,
+                       loss=imperfect_loss,
+                       optimizer=optimizer_tau,
+                       total_epochs=total_epochs_tau,
+                       patience=patience_tau,
+                       clipping=True,
+                       verbose=False)
 t1=time.time()
 print('Training time (seconds):')
 print(t1-t0)
 
-# metrics                      
-loss_tau  = np.array(hist_tau.history['loss'])
+# metrics
+loss_tau  = np.array(hist_tau['loss'])
 
-# test statistic                                         
+# test statistic
 final_loss = loss_tau[-1]
 tau_OBS    = -2*final_loss
 print('tau_OBS: %f'%(tau_OBS))
 
-# save t                                                                                                               
+# save t
 log_t = OUTPUT_PATH+OUTPUT_FILE_ID+'_TAU.txt'
 out   = open(log_t,'w')
 out.write("%f\n" %(tau_OBS))
 out.close()
 
-# save the training history                                       
+# save the training history
 log_history = OUTPUT_PATH+OUTPUT_FILE_ID+'_TAU_history.h5'
 f           = h5py.File(log_history,"w")
-epoch       = np.array(range(total_epochs_tau))
-keepEpoch   = epoch % patience_tau == 0
-f.create_dataset('epoch', data=epoch[keepEpoch], compression='gzip')
-for key in list(hist_tau.history.keys()):
-    monitored = np.array(hist_tau.history[key])
+for key in list(hist_tau.keys()):
+    monitored = np.array(hist_tau[key])
     print('%s: %f'%(key, monitored[-1]))
-    f.create_dataset(key, data=monitored[keepEpoch],   compression='gzip')
+    f.create_dataset(key, data=monitored,   compression='gzip')
 f.close()
 
-# save the model    
+# save the model
 log_weights = OUTPUT_PATH+OUTPUT_FILE_ID+'_TAU_weights.h5'
 tau.save_weights(log_weights)
+
 
 #### training delta ###########################
 delta = imperfect_model(input_shape=(None, inputsize),
@@ -151,41 +157,46 @@ delta = imperfect_model(input_shape=(None, inputsize),
                       BSMarchitecture=BSMarchitecture, BSMweight_clipping=BSMweight_clipping, train_f=False, train_nu=True)
 
 print(delta.summary())
-opt  = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=0.0000001)
-delta.compile(loss=imperfect_loss,  optimizer=opt)
+optimizer_delta  = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=0.0000001)
+
 
 t0=time.time()
-hist_delta = delta.fit(feature, target, batch_size=batch_size, epochs=total_epochs_delta, verbose=False)
+hist_delta = train_model(model=delta,
+                         feature=feature,
+                         target=target,
+                         loss=imperfect_loss,
+                         optimizer=optimizer_delta,
+                         total_epochs=total_epochs_delta,
+                         patience=patience_delta,
+                         clipping=False,
+                         verbose=False)
 t1=time.time()
 print('Training time (seconds):')
 print(t1-t0)
 
-# metrics                      
-loss_delta  = np.array(hist_delta.history['loss'])
+# metrics
+loss_delta  = np.array(hist_delta['loss'])
 
-# test statistic                                            
+# test statistic
 final_loss   = loss_delta[-1]
 delta_OBS    = -2*final_loss
 print('delta_OBS: %f'%(delta_OBS))
 
-# save t                  
+# save t
 log_t = OUTPUT_PATH+OUTPUT_FILE_ID+'_DELTA.txt'
 out   = open(log_t,'w')
 out.write("%f\n" %(delta_OBS))
 out.close()
 
-# save the training history  
+# save the training history
 log_history = OUTPUT_PATH+OUTPUT_FILE_ID+'_DELTA_history.h5'
 f           = h5py.File(log_history,"w")
-epoch       = np.array(range(total_epochs_delta))
-keepEpoch   = epoch % patience_delta == 0
-f.create_dataset('epoch', data=epoch[keepEpoch], compression='gzip')
-for key in list(hist_delta.history.keys()):
-    monitored =np.array(hist_delta.history[key])
+for key in list(hist_delta.keys()):
+    monitored =np.array(hist_delta[key])
     print('%s: %f'%(key, monitored[-1]))
-    f.create_dataset(key, data=monitored[keepEpoch],   compression='gzip')
+    f.create_dataset(key, data=monitored,   compression='gzip')
 f.close()
 
-# save the model 
+# save the model
 log_weights = OUTPUT_PATH+OUTPUT_FILE_ID+'_DELTA_weights.h5'
 delta.save_weights(log_weights)
