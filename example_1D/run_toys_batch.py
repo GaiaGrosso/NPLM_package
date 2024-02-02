@@ -10,17 +10,17 @@ def create_config_file(config_table, OUTPUT_DIRECTORY):
         json.dump(config_table, outfile, indent=4)
     return '%s/config.json'%(OUTPUT_DIRECTORY)
 
-# configuration dictionary                                                                                                                    
+# configuration dictionary
 config_json = {
     "N_batches": 5,
     "N_Ref"   : int(200000/5),
     "N_Bkg"   : int(2000/5),
-    "N_Sig"   : 0,#10,                                                                                                                        
+    "N_Sig"   : 0,#10,
     "output_directory": OUTPUT_DIRECTORY,
-    "shape_nuisances_id":        ['scale'],
-    "shape_nuisances_data":      [0], #[1]                                                                                                    
+    "shape_nuisances_id":        ['S'],
+    "shape_nuisances_data":      [0], #[1]
     "shape_nuisances_reference": [0],
-    "shape_nuisances_sigma":     [0.05],
+    "shape_nuisances_sigma":     [0.05], 
     "shape_dictionary_list":     [parNN_list['scale']],
     "norm_nuisances_data":       0,
     "norm_nuisances_reference":  0,
@@ -30,8 +30,8 @@ config_json = {
     "epochs_delta": 30000,
     "patience_delta": 1000,
     "BSMarchitecture": [1,4,1],
-    "BSMweight_clipping": 9,
-    "correction": "SHAPE", # "SHAPE", "NORM", ""                                                                                              
+    "BSMweight_clipping": 10, 
+    "correction": "", # "SHAPE", "NORM", ""
 }
 
 # list process normalization generation values from shape uncertainties generation values                                                     
@@ -55,22 +55,22 @@ if config_json["correction"]=='SHAPE' and not len(config_json["shape_dictionary_
     print('Error: correction is SHAPE but not specified "shape_dictionary_list" in the configuration dictionary.')
     exit()
 
-# add details about the experiment set up to the folder name                                                                                  
+# add details about the experiment set up to the folder name
 correction_details = config_json["correction"]
 if config_json["correction"]=='SHAPE':
     correction_details += str(len(config_json["shape_dictionary_list"]))+'_'
     for i in range(len(config_json["shape_nuisances_id"])):
         key = config_json["shape_nuisances_id"][i]
-        if config_json["shape_nuisances_data"][i] !=0:
-            correction_details += 'nu'+key+str(config_json["shape_nuisances_data"][i])+'_'
+        #if config_json["shape_nuisances_data"][i] !=0:
+        correction_details += 'sigma'+key+str(config_json["shape_nuisances_sigma"][i])+'_'+'nu'+key+str(config_json["shape_nuisances_data"][i])+'_'
 if config_json["correction"]=='NORM' or config_json["correction"]=='SHAPE':
     if config_json["correction"]=='NORM':
         correction_details += '_'
-    correction_details += 'nuN'+ str(config_json["norm_nuisances_data"])+'_'
-ID ='Nbatches%i/'%(config_json["N_batches"])+correction_details+'Nbkg'+str(config_json["N_Bkg"])+'_Nsig'+str(config_json["N_Sig"])
+    correction_details +=  'sigmaN'+ str(config_json["norm_nuisances_sigma"])+'_'+'nuN'+ str(config_json["norm_nuisances_data"])+'_'
+ID ='Nbatches%i/'%(config_json["N_batches"])+correction_details+'Nbkg'+str(config_json["N_Bkg"])+'_Nsig'+str(config_json["N_Sig"]) 
 ID+='_epochsTau'+str(config_json["epochs_tau"])+'_epochsDelta'+str(config_json["epochs_delta"])
-ID+='_arc'+str(config_json["BSMarchitecture"]).replace(', ', '_').replace('[', '').replace(']', '')+'_wclip'+str(config_json["BSMweight_clipp\
-ing"])
+ID+='_arc'+str(config_json["BSMarchitecture"]).replace(', ', '_').replace('[', '').replace(']', '')+'_wclip'+str(config_json["BSMweight_clipping"])
+
 
 #### launch python script ###########################                                                                                         
 if __name__ == '__main__':
