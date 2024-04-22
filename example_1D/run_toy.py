@@ -7,7 +7,7 @@ import os.path
 import time
 from config_utils import parNN_list
 
-OUTPUT_DIRECTORY = './'
+OUTPUT_DIRECTORY = './' # modify save path here
 
 def create_config_file(config_table, OUTPUT_DIRECTORY):
     with open('%s/config.json'%(OUTPUT_DIRECTORY), 'w') as outfile:
