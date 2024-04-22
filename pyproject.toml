@@ -1,7 +1,16 @@
-File Edit Options Buffers Tools Conf Help                                                                         
+[project]
+name = "NPLM"
+version = "0.1.0"
+authors = [
+  { name="Gaia Grosso", email="gaia.grosso@cern.ch" },
+]
+description = "The New Physics Learning Machine algorithm"
+readme = "README.md"
+requires-python = ">=3.8"
+                                                                        
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools==42",
     "wheel",
     "tensorflow==2.3.0",
     "h5py",
