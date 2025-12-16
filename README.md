@@ -27,10 +27,11 @@ Create a virtual environment with the packages specified in `requirements.txt`
   ```
   pip freeze
   ```
-  Now you are ready to download the [NPLM](https://pypi.org/project/NPLM/) package:
+  Now you are ready to use the NPLM package. Clone this git repository:
   ```
-  pip install NPLM
+  git@github.com:GaiaGrosso/NPLM_package.git
   ```
+  
 ## Envirnoment set up on lxplus at Cern
   Just source the virtual environment: 
   ```
