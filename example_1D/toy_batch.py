@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 
-from NPLM.NNutils import *
-from NPLM.PLOTutils import *
+sys.path.insert(1, '../src/NPLM/')
+from NNutils import *
+from PLOTutils import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-j', '--jsonfile'  , type=str, help="json file", required=True)
