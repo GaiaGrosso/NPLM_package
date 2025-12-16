@@ -14,8 +14,9 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, Input, Layer
 from tensorflow import Variable
 
-from NPLM.NNutils import *
-from NPLM.PLOTutils import *
+sys.path.insert(1, '../src/NPLM/')
+from NNutils import *
+from PLOTutils import *
 
 parser = argparse.ArgumentParser()    
 parser.add_argument('-j', '--jsonfile'  , type=str, help="json file", required=True)
